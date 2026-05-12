@@ -13,9 +13,6 @@ We've already declared and initialized both data structures:
 */
 
 #define NUMBER_CITIES 10
-
-hgfjhgbhuhufjhjufhf
-
 #define MAX_NAME 10
 #define MAX_CITY_NAME 20
 
