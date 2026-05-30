@@ -38,9 +38,17 @@ void printRoadMap(){
 
     struct RoadMap *current = head;
     while (current != NULL){
-        printf ("%s - ", citiesInfo[current -> city_id].city_name);
+        if (current -> next == NULL){
+        printf ("%s", citiesInfo[current -> city_id].city_name);
+        printf("  %d", current -> total_cost);
+        }else{
+            printf ("%s - ", citiesInfo[current -> city_id].city_name);
+        }
     current = current -> next;
     }
+    
+    printf("\nTotal cost: %d\n", getLastElement()->total_cost);
+    printf("\n");
 }
 
 int RouteSearch(int source, int destination, struct RoadMap *RoadMap){
@@ -62,7 +70,7 @@ int RouteSearch(int source, int destination, struct RoadMap *RoadMap){
     // A partir d'aqui ens trobem en el punt en que hem de fer escala (a la ciutat mes barata)
     if (last_visited != -1){
         struct RoadMap *tmp = head;
-        while (tmp->next != NULL){ // AIXO NO FUNCIONA QUAN NOMES HI HA UN ITEM A ROADMAP
+        while (tmp->next->next != NULL){ // AIXO NO FUNCIONA QUAN NOMES HI HA UN ITEM A ROADMAP
             tmp = tmp->next;
         }
         last_visited = tmp->city_id;
@@ -80,7 +88,7 @@ int RouteSearch(int source, int destination, struct RoadMap *RoadMap){
     int idxNextSource = idx - 1;
 
     for (; idx<NUMBER_CITIES; idx++){
-        if ((adjacency_matrix[source][idx] < min)&& (adjacency_matrix[source][idx] != 0)) {
+        if ((adjacency_matrix[source][idx] < min) && (adjacency_matrix[source][idx] != 0) && (idx != last_visited)) {
         min = adjacency_matrix[source][idx];
         idxNextSource = idx;
         }
