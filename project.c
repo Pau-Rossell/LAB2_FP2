@@ -39,36 +39,50 @@ void printRoadMap(){
 }
 
 int RouteSearch(int source, int destination, struct RoadMap *RoadMap){
-    if (RoadMap == NULL){
-        addToRoadMap(source);
     
+    if (RoadMap == NULL){   // Aixo nomes quan no hi ha res a RoadMap (l'inicialitzem)
+        addToRoadMap(source);
     };
-int cost = adjacency_matrix[source][destination];
-if (cost == 0){
-    int min = 0;
+
+    int cost = adjacency_matrix[source][destination];
+    
+    if (cost != 0){         // Aixo es quan hi ha ruta directa de source a destination
+        addToRoadMap(destination);
+        return cost;
+    }
+
+    // A partir d'aqui ens trobem en el punt en que hem de fer escala (a la ciutat mes barata)
+    int last_visited; //Mirem d'on venim per no entrar en bucle
+
+    struct RoadMap *tmp = head;
+    while (tmp->next->next != NULL){ // AIXO NO FUNCIONA QUAN NOMES HI HA UN ITEM A ROADMAP
+        tmp = tmp->next;
+    }
+    last_visited = tmp->city_id;
+    
+    int min = 0; // 
     int idx = 0;
     while (!min){
-        min = adjacency_matrix[source][idx];
-        idx ++;
+        if (idx != last_visited){
+            min = adjacency_matrix[source][idx];
+        }
+    idx ++;
     }
-    
+
     int idxNextSource = idx - 1;
 
     for (; idx<NUMBER_CITIES; idx++){
         if ((adjacency_matrix[source][idx] < min)&& (adjacency_matrix[source][idx] != 0)) {
-            min = adjacency_matrix[source][idx];
-            idxNextSource = idx;
+        min = adjacency_matrix[source][idx];
+        idxNextSource = idx;
         }
     }
     addToRoadMap(idxNextSource);
     cost = min;
 
-    return (RouteSearch(idxNextSource, destination, RoadMap) + cost);
-
+    return RouteSearch(idxNextSource, destination, head) + cost;
 };
-addToRoadMap(destination);
-return cost;
-}
+
 
 int main() {
     
