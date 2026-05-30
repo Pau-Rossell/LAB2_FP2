@@ -4,7 +4,15 @@
 
 struct RoadMap *head = NULL;
 
-void addToRoadMap(int city_id){
+struct RoadMap *getLastElement(){
+    struct RoadMap *tmp = head;
+    while (tmp -> next != NULL){
+        tmp = tmp -> next;
+    }
+    return tmp;
+}
+
+void addToRoadMap(int city_id, int hop_cost){
     
     struct RoadMap *newNode = malloc(sizeof(struct RoadMap));
     newNode -> city_id = city_id;
@@ -19,12 +27,9 @@ void addToRoadMap(int city_id){
     struct RoadMap *current = head;
     int totalCost = 0;
 
-    while ((current -> next) != NULL) {
-        totalCost = totalCost + (current -> total_cost);
-        current = current -> next;
-    }
-    newNode -> total_cost = totalCost;
-    current -> next = newNode;
+    struct RoadMap *lastElement = getLastElement();
+    newNode -> total_cost = lastElement->total_cost + hop_cost;
+    lastElement -> next = newNode;
 
 }
 
@@ -40,25 +45,28 @@ void printRoadMap(){
 
 int RouteSearch(int source, int destination, struct RoadMap *RoadMap){
     
+    int last_visited = NUMBER_CITIES; //Mirem d'on venim per no entrar en bucle
+
     if (RoadMap == NULL){   // Aixo nomes quan no hi ha res a RoadMap (l'inicialitzem)
-        addToRoadMap(source);
+        addToRoadMap(source, 0);
+        last_visited = -1;
     };
 
     int cost = adjacency_matrix[source][destination];
     
     if (cost != 0){         // Aixo es quan hi ha ruta directa de source a destination
-        addToRoadMap(destination);
+        addToRoadMap(destination, cost);
         return cost;
     }
 
     // A partir d'aqui ens trobem en el punt en que hem de fer escala (a la ciutat mes barata)
-    int last_visited; //Mirem d'on venim per no entrar en bucle
-
-    struct RoadMap *tmp = head;
-    while (tmp->next->next != NULL){ // AIXO NO FUNCIONA QUAN NOMES HI HA UN ITEM A ROADMAP
-        tmp = tmp->next;
+    if (last_visited != -1){
+        struct RoadMap *tmp = head;
+        while (tmp->next != NULL){ // AIXO NO FUNCIONA QUAN NOMES HI HA UN ITEM A ROADMAP
+            tmp = tmp->next;
+        }
+        last_visited = tmp->city_id;
     }
-    last_visited = tmp->city_id;
     
     int min = 0; // 
     int idx = 0;
@@ -77,8 +85,8 @@ int RouteSearch(int source, int destination, struct RoadMap *RoadMap){
         idxNextSource = idx;
         }
     }
-    addToRoadMap(idxNextSource);
     cost = min;
+    addToRoadMap(idxNextSource, cost);
 
     return RouteSearch(idxNextSource, destination, head) + cost;
 };
