@@ -4,7 +4,9 @@
 
 struct RoadMap *head = NULL;
 
-struct RoadMap *getLastElement(){
+struct RoadMap *totalRoadMap = NULL;
+
+struct RoadMap *getLastElement(struct RoadMap *head){
     struct RoadMap *tmp = head;
     while (tmp -> next != NULL){
         tmp = tmp -> next;
@@ -19,22 +21,28 @@ void addToRoadMap(int city_id, int hop_cost){
     newNode -> total_cost = 0;
     newNode-> next = NULL;
 
-        if (head == NULL) {
+    if (head == NULL) {
         newNode->total_cost = 0;
         head = newNode;
         return;
-        }
+    }
     struct RoadMap *current = head;
     int totalCost = 0;
 
-    struct RoadMap *lastElement = getLastElement();
+    struct RoadMap *lastElement = getLastElement(head);
     newNode -> total_cost = lastElement->total_cost + hop_cost;
     lastElement -> next = newNode;
+
+    if (totalRoadMap == NULL) {
+        totalRoadMap = newNode;
+        return;
+    }
+    struct RoadMap *curr = getLastElement(totalRoadMap);
+    curr -> next = newNode;
 
 }
 
 void printRoadMap(){
-    printf ("Total Road Map: \n");
 
     struct RoadMap *current = head;
     while (current != NULL){
@@ -46,9 +54,33 @@ void printRoadMap(){
         }
     current = current -> next;
     }
-    
-    printf("\nTotal cost: %d\n", getLastElement()->total_cost);
     printf("\n");
+}
+
+void printTotalRoadMap(int totalCost){
+    printf("Total Road Map: \n");
+    struct RoadMap *tmp = totalRoadMap;
+    while (tmp != NULL){
+        if (tmp -> next == NULL){
+        printf ("%s", citiesInfo[tmp -> city_id].city_name);
+        printf("  %d", tmp -> total_cost);
+        }else{
+            printf ("%s - ", citiesInfo[tmp -> city_id].city_name);
+        }
+    tmp = tmp -> next;
+    }
+        printf("Total Cost: %d", totalCost);
+
+
+}
+void deleteAllRoadMap(){
+    struct RoadMap *current = head;
+    while (current -> next != NULL){
+        struct RoadMap *tmp = current->next;
+        free(current);
+        current = tmp;
+    }
+    head = NULL;
 }
 
 int RouteSearch(int source, int destination, struct RoadMap *RoadMap){
@@ -102,15 +134,21 @@ int RouteSearch(int source, int destination, struct RoadMap *RoadMap){
 
 int main() {
     
-    int cost;
-    cost = RouteSearch(0, 5, head);
+    int cost = 0;
+    cost = cost + RouteSearch(0, 5, head);
     printRoadMap();
+    deleteAllRoadMap();
 
-    cost = RouteSearch(3, 6, head);
+    cost = cost + RouteSearch(5, 6, head);
     printRoadMap();
+    deleteAllRoadMap();
 
-    cost = RouteSearch(9, 1, head);
+
+    cost = cost + RouteSearch(6, 1, head);
     printRoadMap();
+    deleteAllRoadMap();
+
+    printTotalRoadMap(cost);
 
     return 0;
 }
