@@ -8,41 +8,46 @@ struct RoadMap *totalRoadMap = NULL;
 
 struct RoadMap *getLastElement(struct RoadMap *head){
     struct RoadMap *tmp = head;
+    if (head == NULL){
+        return NULL;
+    }
     while (tmp -> next != NULL){
         tmp = tmp -> next;
     }
     return tmp;
 }
 
-void addToRoadMap(int city_id, int hop_cost){
+void addToRoadMap (int city_id, int hop_cost){
     
     struct RoadMap *newNode = malloc(sizeof(struct RoadMap));
     newNode -> city_id = city_id;
-    newNode -> total_cost = 0;
     newNode-> next = NULL;
 
     if (head == NULL) {
         newNode->total_cost = 0;
         head = newNode;
-        return;
-    }
-    struct RoadMap *current = head;
-    int totalCost = 0;
+    }else{
 
     struct RoadMap *lastElement = getLastElement(head);
     newNode -> total_cost = lastElement->total_cost + hop_cost;
     lastElement -> next = newNode;
+    }
+    //Afegeixo lo mateix x el total roadmap
+    struct RoadMap *newTotalNode = malloc(sizeof(struct RoadMap));
+    newTotalNode -> city_id = city_id;
+    newTotalNode->total_cost = newNode->total_cost;
+    newTotalNode-> next = NULL;
 
     if (totalRoadMap == NULL) {
-        totalRoadMap = newNode;
-        return;
-    }
-    struct RoadMap *curr = getLastElement(totalRoadMap);
-    curr -> next = newNode;
-
+        totalRoadMap = newTotalNode;
+    }else{
+    struct RoadMap *lastTotalElement = getLastElement(totalRoadMap);
+    lastTotalElement -> next = newTotalNode;
+}
 }
 
 void printRoadMap(){
+    
 
     struct RoadMap *current = head;
     while (current != NULL){
@@ -58,24 +63,23 @@ void printRoadMap(){
 }
 
 void printTotalRoadMap(int totalCost){
-    printf("Total Road Map: \n");
+    printf("\n\nTotal Road Map: \n");
     struct RoadMap *tmp = totalRoadMap;
     while (tmp != NULL){
         if (tmp -> next == NULL){
         printf ("%s", citiesInfo[tmp -> city_id].city_name);
-        printf("  %d", tmp -> total_cost);
         }else{
             printf ("%s - ", citiesInfo[tmp -> city_id].city_name);
         }
     tmp = tmp -> next;
     }
-        printf("Total Cost: %d", totalCost);
+        printf("\n\nTotal Cost: %d\n", totalCost);
 
 
 }
 void deleteAllRoadMap(){
     struct RoadMap *current = head;
-    while (current -> next != NULL){
+    while (current != NULL){
         struct RoadMap *tmp = current->next;
         free(current);
         current = tmp;
@@ -100,7 +104,7 @@ int RouteSearch(int source, int destination, struct RoadMap *RoadMap){
     }
 
     // A partir d'aqui ens trobem en el punt en que hem de fer escala (a la ciutat mes barata)
-    if (last_visited != -1){
+    if ((last_visited != -1)&&(head != NULL) &&(head -> next != NULL)){
         struct RoadMap *tmp = head;
         while (tmp->next->next != NULL){ // AIXO NO FUNCIONA QUAN NOMES HI HA UN ITEM A ROADMAP
             tmp = tmp->next;
@@ -110,7 +114,7 @@ int RouteSearch(int source, int destination, struct RoadMap *RoadMap){
     
     int min = 0; // 
     int idx = 0;
-    while (!min){
+    while ((idx < NUMBER_CITIES) && (!min)){
         if (idx != last_visited){
             min = adjacency_matrix[source][idx];
         }
@@ -136,6 +140,7 @@ int main() {
     
     int cost = 0;
     cost = cost + RouteSearch(0, 5, head);
+    printf("\nPartial Road Map: \n");
     printRoadMap();
     deleteAllRoadMap();
 
