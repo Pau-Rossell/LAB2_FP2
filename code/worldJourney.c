@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-
-
+#include "small.h"
 
 struct RoadMap *getLastElement(struct RoadMap *head)
 {
@@ -18,17 +17,17 @@ struct RoadMap *getLastElement(struct RoadMap *head)
     return tmp;
 }
 
-void addToRoadMap(int city_id, int hop_cost)
+void addToRoadMap(struct RoadMap **head, struct RoadMap **totalRoadMap, int city_id, int hop_cost)
 {
     struct RoadMap *newNode = malloc(sizeof(struct RoadMap));
     newNode->city_id = city_id;
     newNode->next = NULL;
 
-    if (head == NULL) {
+    if (*head == NULL) {
         newNode->total_cost = 0;
-        head = newNode;
+        *head = newNode;
     } else {
-        struct RoadMap *lastElement = getLastElement(head);
+        struct RoadMap *lastElement = getLastElement(*head);
         newNode->total_cost = lastElement->total_cost + hop_cost;
         lastElement->next = newNode;
     }
@@ -39,15 +38,15 @@ void addToRoadMap(int city_id, int hop_cost)
     newTotalNode->total_cost = newNode->total_cost;
     newTotalNode->next = NULL;
 
-    if (totalRoadMap == NULL) {
-        totalRoadMap = newTotalNode;
+    if (*totalRoadMap == NULL) {
+        *totalRoadMap = newTotalNode;
     } else {
-        struct RoadMap *lastTotalElement = getLastElement(totalRoadMap);
+        struct RoadMap *lastTotalElement = getLastElement(*totalRoadMap);
         lastTotalElement->next = newTotalNode;
     }
 }
 
-void printPartialRoadMap()
+void printPartialRoadMap(struct RoadMap *head)
 {
     struct RoadMap *current = head;
 
@@ -64,7 +63,7 @@ void printPartialRoadMap()
     printf("\n");
 }
 
-void printTotalRoadMap(int totalCost)
+void printTotalRoadMap(struct RoadMap *totalRoadMap, int totalCost)
 {
     printf("\n\nTotal Road Map: \n");
 
@@ -73,7 +72,7 @@ void printTotalRoadMap(int totalCost)
     while (tmp != NULL) {
         if (tmp->next == NULL) {   // Aqui he afegit aquesta variable currentCityID que serveix perque no s'ens imprimeixi la mateixa ciutat dos cops seguits :)
             printf("%s", citiesInfo[tmp->city_id].city_name);
-        } else if( tmp->city_id != currentCityID){
+        } else if (tmp->city_id != currentCityID) {
             printf("%s - ", citiesInfo[tmp->city_id].city_name);
             currentCityID = tmp->city_id;
         }
@@ -83,9 +82,9 @@ void printTotalRoadMap(int totalCost)
     printf("\n\nTotal Cost: %d\n", totalCost);
 }
 
-void deleteAllRoadMap()
+void deleteAllRoadMap(struct RoadMap **head)
 {
-    struct RoadMap *current = head;
+    struct RoadMap *current = *head;
 
     while (current != NULL) {
         struct RoadMap *tmp = current->next;
@@ -93,38 +92,41 @@ void deleteAllRoadMap()
         current = tmp;
     }
 
-    head = NULL;
+    *head = NULL;
 }
 
-void deleteTotalRoadMap()
+void deleteTotalRoadMap(struct RoadMap **totalRoadMap)
 {
-    struct RoadMap *current = totalRoadMap;
+    struct RoadMap *current = *totalRoadMap;
+
     while (current != NULL) {
         struct RoadMap *tmp = current->next;
         free(current);
         current = tmp;
     }
-    totalRoadMap = NULL;
+
+    *totalRoadMap = NULL;
 }
 
-int RouteSearch(int source, int destination, struct RoadMap *RoadMap)
+int RouteSearch(int source, int destination, struct RoadMap **head, struct RoadMap **totalRoadMap)
 {
-    int last_visited = -1; //Mirem d'on venim per no entrar en bucle
+    int last_visited = NUMBER_CITIES; //Mirem d'on venim per no entrar en bucle
 
-    if (RoadMap == NULL) { // Aixo nomes quan no hi ha res a RoadMap (l'inicialitzem)
-        addToRoadMap(source, 0);
+    if (*head == NULL) { // Aixo nomes quan no hi ha res a RoadMap (l'inicialitzem)
+        addToRoadMap(head, totalRoadMap, source, 0);
+        last_visited = -1;
     };
 
     int cost = adjacency_matrix[source][destination];
 
     if (cost != 0) { // Aixo es quan hi ha ruta directa de source a destination
-        addToRoadMap(destination, cost);
+        addToRoadMap(head, totalRoadMap, destination, cost);
         return cost;
     }
 
     // A partir d'aqui ens trobem en el punt en que hem de fer escala (a la ciutat mes barata)
-    if ((last_visited != -1) && (head != NULL) && (head->next != NULL)) {
-        struct RoadMap *tmp = head;
+    if ((last_visited != -1) && (*head != NULL) && ((*head)->next != NULL)) {
+        struct RoadMap *tmp = *head;
 
         while (tmp->next->next != NULL) { // AIXO NO FUNCIONA QUAN NOMES HI HA UN ITEM A ROADMAP
             tmp = tmp->next;
@@ -153,7 +155,7 @@ int RouteSearch(int source, int destination, struct RoadMap *RoadMap)
     }
 
     cost = min;
-    addToRoadMap(idxNextSource, cost);
+    addToRoadMap(head, totalRoadMap, idxNextSource, cost);
 
-    return RouteSearch(idxNextSource, destination, head) + cost;
-};
+    return RouteSearch(idxNextSource, destination, head, totalRoadMap) + cost;
+}
