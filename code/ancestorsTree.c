@@ -56,7 +56,7 @@ struct parents fillNode(int citiesInfoIDX, struct FamilyTreeNode **node)
 // -------------------------------------------------------------------------------------------------------
 // A partir d'aqui el DFS
 
-void dfsStep(struct FamilyTreeNode **current, int nextIdx)
+void dfsStep(struct FamilyTreeNode **current, int nextIdx, struct RoadMap **head, struct RoadMap **totalRoadMap)
 {
     // Aquesta funcio senzillamen es el pas de dfs que es truca de forma recursiva
     if ((current == NULL) || (nextIdx == -1)) {
@@ -66,15 +66,24 @@ void dfsStep(struct FamilyTreeNode **current, int nextIdx)
     struct parents p = fillNode(nextIdx, current);
 
     if (p.mParentsID != -1) {
-        dfsStep(&((*current)->mother_parents), p.mParentsID);
+
+        RouteSearch(nextIdx, p.mParentsID, head, totalRoadMap);
+        printPartialRoadMap(*head);
+        deletePartialRoadMap(head);
+        dfsStep(&((*current)->mother_parents), p.mParentsID, head, totalRoadMap);
+
     }
 
     if (p.fParentsID != -1) {
-        dfsStep(&((*current)->father_parents), p.fParentsID);
+
+        RouteSearch(nextIdx, p.fParentsID, head, totalRoadMap);
+        printPartialRoadMap(*head);
+        deletePartialRoadMap(head);
+        dfsStep(&((*current)->father_parents), p.fParentsID, head, totalRoadMap);
     }
 }
 
-void dfsSearch(struct FamilyTreeNode *head)
+void dfsSearch(struct FamilyTreeNode *head, struct RoadMap **roadMapHead, struct RoadMap **totalRoadMap)
 {
     // I aquesta es la ultima de dfs que senzillament inicialitza el familytree si no esta inicialitzat, i truca dfsStep
     if (head == NULL) {
@@ -83,8 +92,8 @@ void dfsSearch(struct FamilyTreeNode *head)
 
     struct parents p = fillNode(0, &head);
 
-    dfsStep(&(head->mother_parents), p.mParentsID);
-    dfsStep(&(head->father_parents), p.fParentsID);
+    dfsStep(&(head->mother_parents), p.mParentsID, roadMapHead, totalRoadMap);
+    dfsStep(&(head->father_parents), p.fParentsID, roadMapHead, totalRoadMap);
 }
 
 

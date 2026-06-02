@@ -82,7 +82,7 @@ void printTotalRoadMap(struct RoadMap *totalRoadMap, int totalCost)
     printf("\n\nTotal Cost: %d\n", totalCost);
 }
 
-void deleteAllRoadMap(struct RoadMap **head)
+void deletePartialRoadMap(struct RoadMap **head)
 {
     struct RoadMap *current = *head;
 

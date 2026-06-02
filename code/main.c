@@ -1,16 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "small.h"
 struct RoadMap *head = NULL;
 struct RoadMap *totalRoadMap = NULL;
 struct FamilyTreeNode *familyTreeDFS = NULL; // Family Tree que plenarem amb DFS
 struct FamilyTreeNode *familyTreeBFS = NULL; // Family Tree que plenarem amb BFS
-struct parents
-{
-    int mParentsID;
-    int fParentsID;
-};
+
 #include "ancestorsTree.c"
 int main()
 {
@@ -23,19 +18,18 @@ int main()
 
     head = NULL;
     totalRoadMap = NULL;
+    
+    printf("\nPartial road map:\n");
 
+    dfsSearch(familyTreeDFS, &head, &totalRoadMap);
+    
     printf("Ancestors' tree:\n\n");
-
-    dfsSearch(familyTreeDFS);
-
     printf("DFS -> Names:\n");
     printTree(familyTreeDFS);
 
-    //printf("\nPartial road map:\n");
-    //printPartialRoadMap();
 
-    //printf("\nTotal Road Map:\n");
-    //printTotalRoadMap(0);
+    printf("\nTotal Road Map:\n");
+    printTotalRoadMap(totalRoadMap, 0);
 
     printf("\n----------------------------------\n\n");
     
