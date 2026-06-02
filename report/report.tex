@@ -1,4 +1,110 @@
-\documentclass{article}
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{geometry}
+\usepackage{parskip}
+\usepackage{listings}
+\usepackage{hyperref}
+
+\geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+
+\hypersetup{hidelinks}
+
+\lstdefinestyle{cstyle}{
+  language=C,
+  basicstyle=\ttfamily\small,
+  numbers=none,
+  frame=single,
+  breaklines=true,
+  tabsize=4,
+  showstringspaces=false
+}
+
+\pagestyle{empty}
+
+\title{
+  {\large Universitat Aut\`{o}noma de Barcelona}\\
+  {\large Degree in Artificial Intelligence -- Fundamentals of Programming 2}\\[0.4cm]
+  {\LARGE \textbf{Practical Project 2}}\\[0.2cm]
+  {\normalsize World Journey and Ancestors' Tree in C}
+}
+
+\author{
+  Pau Rossell (NIU: 1750424) \quad Gerard Puiggermanal (NIU: 1790711)
+}
+
+\date{}
+
 \begin{document}
-...
+
+\maketitle
+
+% ============================================================
+\section*{Introduction}
+% ============================================================
+
+This report describes the design and implementation of the second practical project for the subject Fundamentals of Programming 2. The project consists of a program written in C that simulates a world journey through cities in order to reconstruct a family tree of ancestors.
+
+The problem is divided into two closely related parts. The first involves graph traversal and route planning. Given a set of cities connected by a weighted, bidirected graph, the program must find a route from one city to another. The second part concerns binary tree construction. A family tree of ancestors is built, expanding generation by generation. We have created this tree using both Depth-First Search (DFS) and Breadth-First Search (BFS).
+
+The project integrates several key concepts of the course: dynamic memory management, pointer manipulation, recursive algorithms, linked list structures, and binary trees.
+
+\section*{System Design and Strategy}
+
+\subsection*{Overall Architecture}
+
+The code is split across three source files:
+
+\begin{itemize}
+  \item \texttt{main.c} -- Entry point: manages tree construction, printing, and road map generation for both BFS and DFS.
+  \item \texttt{worldJourney.c} -- Graph data structures, route search heuristic, and road map management.
+  \item \texttt{ancestorsTree.c} -- Family tree construction (DFS and BFS), printing utilities, and memory cleanup.
+\end{itemize}
+
+Header files (small.h, medium.h, large.h) define the adjacency matrix and city data at compile time. This allows different dataset sizes to be compiled by passing -DSMALL\_CASE, -DMEDIUM\_CASE, or -DLARGE\_CASE to the compiler.
+
+\subsection*{Graph Representation and Route Heuristic}
+
+Cities are represented as nodes in a weighted, bidirected graph. Connections and travel costs are stored in an adjacency matrix where entry $(i, j)$ holds the cost of travelling directly from city $i$ to city $j$, and a value of 0 indicates no direct connection (or itself).
+
+The route-finding heuristic implemented in RouteSearch() operates as follows:
+
+\begin{enumerate}
+  \item If the destination is directly reachable from the current city, travel there immediately.
+  \item Otherwise, among all neighbouring cities not immediately previously visited, select the one with the minimum travel cost.
+  \item Recurse from the new city until the destination is reached.
+\end{enumerate}
+
+This strategy is not guaranteed to find the globally optimal path, but it provides a good approximation. The heuristic avoids revisiting the immediately previous city by tracking last\_visited, preventing an infinite loop.
+
+The road map is maintained as a singly linked list of RoadMap nodes, each storing a city ID and the accumulated travel cost. A second list, totalRoadMap, records the full city sequence across the entire journey.
+
+\subsection*{Family Tree Construction}
+
+The ancestors' tree is a binary tree where each node stores the names of a mother-father couple, the city where they lived, and pointers to the nodes representing the parents of each. The root is the starting city Barcelona (index 0). The civil registry provides, for each city, the names and city IDs of the next ancestral generation. The tree expands until cities with no further ancestor information are found.
+
+\textbf{DFS strategy.} The DFS construction explores as deeply as possible along the mother's family tree before backtracking to expand the father's one. 
+
+\textbf{BFS strategy.} The BFS construction visits all nodes at the same depth level before moving to the next. This requires an explicit queue implemented as a linked list. Each queue entry holds both the city ID to be processed and a pointer to the corresponding tree node pointer, so that the tree is correctly produced as nodes are removed from queue. 
+
+\section*{Implementation Details}
+
+We used malloc() for all dynamic allocations, and after each allocation we always checked for NULL. We created deleteTree(), to clean up the memory. Road map lists are freed node by node in deleteAllRoadMap(), and the BFS queue is cleaned up via clearBfsQueue() before each new BFS run.
+
+The trees can be printed in two ways: one for DFS and another for BFS. The partial road map is printed after each journey step, and a the total Road Map is printed at the end with the whole city sequence and total cost.
+
+\section*{Problems Encountered}
+ 
+In this process, we have stepped into serveral problems that appeared progressively as we built and tested each part of the program.
+ 
+The first issue we ran into was in the route search function. During early tests, the program would get stuck in an infinite recursion, switching between two cities. If city A's cheapest neighbour was city B and city B's cheapest neighbour was city A, which would loop forever. We fixed this by keeping track of the last visited city and excluding it from the next selection.
+ 
+Afterwards, we moved on to building the BFS tree and encountered another problem. When we tried to print the tree, the structure was disconnected. After some trials we realised that the queue was storing local copies of pointers rather than references to the actual fields inside the parent node. 
+ 
+Towards the end, another problem appeared when we were processing cities with no further parents. In the initial version of the programm, we assumed that every city had valid ancestor information and would attempt to follow city IDs that were zero or uninitialised, leading to undefined behaviour. 
+ 
+Finally, when printing the total road map, we noticed that the last city of one partial journey and the first city of the next, were always the same, so that this city appeared twice in the total road map. We added a simple check before inserting a new entry, if it matches the last city already in the total map, it is skipped.
+ 
 \end{document}
