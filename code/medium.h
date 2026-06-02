@@ -1,3 +1,6 @@
+#ifndef MEDIUM_H
+#define MEDIUM_H
+
 /*
 Degree: Artificial Intelligence
 Subject: Fundamentals of Programming 2
@@ -16,9 +19,9 @@ We've already declared, but not initialized, both data structures:
 #define MAX_NAME 10
 #define MAX_CITY_NAME 20
 
-int adjacency_matrix[NUMBER_CITIES][NUMBER_CITIES] = 
+int adjacency_matrix[NUMBER_CITIES][NUMBER_CITIES] =
 {
-    
+    {0}
 };
 
 struct CivilRegistry
@@ -33,7 +36,7 @@ struct CivilRegistry
 
 struct CivilRegistry citiesInfo[NUMBER_CITIES] =
 {
-
+    {0}
 };
 
 struct FamilyTreeNode
@@ -51,3 +54,5 @@ struct RoadMap
     int total_cost;
     struct RoadMap * next;
 };
+
+#endif

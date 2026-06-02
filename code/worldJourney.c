@@ -1,6 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+
+#if defined(LARGE_CASE)
+#include "large.h"
+#elif defined(MEDIUM_CASE)
+#include "medium.h"
+#else
 #include "small.h"
+#endif
 
 struct RoadMap *getLastElement(struct RoadMap *head)
 {
@@ -17,9 +24,30 @@ struct RoadMap *getLastElement(struct RoadMap *head)
     return tmp;
 }
 
+int getPreviousCity(struct RoadMap *head)
+{
+    struct RoadMap *tmp = head;
+
+    if ((tmp == NULL) || (tmp->next == NULL)) {
+        return -1;
+    }
+
+    while (tmp->next->next != NULL) {
+        tmp = tmp->next;
+    }
+
+    return tmp->city_id;
+}
+
 void addToRoadMap(struct RoadMap **head, struct RoadMap **totalRoadMap, int city_id, int hop_cost)
 {
     struct RoadMap *newNode = malloc(sizeof(struct RoadMap));
+
+    if (newNode == NULL) {
+        printf("Road map node cannot be NULL\n");
+        exit(EXIT_FAILURE);
+    }
+
     newNode->city_id = city_id;
     newNode->next = NULL;
 
@@ -32,57 +60,72 @@ void addToRoadMap(struct RoadMap **head, struct RoadMap **totalRoadMap, int city
         lastElement->next = newNode;
     }
 
-    //Afegeixo lo mateix x el total roadmap
-    struct RoadMap *newTotalNode = malloc(sizeof(struct RoadMap));
-    newTotalNode->city_id = city_id;
-    newTotalNode->total_cost = newNode->total_cost;
-    newTotalNode->next = NULL;
+    struct RoadMap *lastTotalElement = getLastElement(*totalRoadMap);
 
-    if (*totalRoadMap == NULL) {
-        *totalRoadMap = newTotalNode;
-    } else {
-        struct RoadMap *lastTotalElement = getLastElement(*totalRoadMap);
-        lastTotalElement->next = newTotalNode;
+    if ((lastTotalElement == NULL) || (lastTotalElement->city_id != city_id)) {
+        struct RoadMap *newTotalNode = malloc(sizeof(struct RoadMap));
+
+        if (newTotalNode == NULL) {
+            printf("Road map node cannot be NULL\n");
+            exit(EXIT_FAILURE);
+        }
+
+        newTotalNode->city_id = city_id;
+        newTotalNode->total_cost = newNode->total_cost;
+        newTotalNode->next = NULL;
+
+        if (*totalRoadMap == NULL) {
+            *totalRoadMap = newTotalNode;
+        } else {
+            lastTotalElement->next = newTotalNode;
+        }
     }
+}
+
+void printRoadMap(struct RoadMap *head)
+{
+    struct RoadMap *current = head;
+    int totalCost = 0;
+
+    while (current != NULL) {
+        printf("%s", citiesInfo[current->city_id].city_name);
+        totalCost = current->total_cost;
+
+        if (current->next != NULL) {
+            printf("-");
+        }
+
+        current = current->next;
+    }
+
+    printf(" %d\n", totalCost);
 }
 
 void printPartialRoadMap(struct RoadMap *head)
 {
-    struct RoadMap *current = head;
-
-    while (current != NULL) {
-        if (current->next == NULL) {
-            printf("%s", citiesInfo[current->city_id].city_name);
-            printf("  %d", current->total_cost);
-        } else {
-            printf("%s - ", citiesInfo[current->city_id].city_name);
-        }
-        current = current->next;
-    }
-
-    printf("\n");
+    printRoadMap(head);
 }
 
 void printTotalRoadMap(struct RoadMap *totalRoadMap, int totalCost)
 {
-    printf("\n\nTotal Road Map: \n");
-
     struct RoadMap *tmp = totalRoadMap;
-    int currentCityID = -1;
+
+    printf("Total Road Map:\n");
+
     while (tmp != NULL) {
-        if (tmp->next == NULL) {   // Aqui he afegit aquesta variable currentCityID que serveix perque no s'ens imprimeixi la mateixa ciutat dos cops seguits :)
-            printf("%s", citiesInfo[tmp->city_id].city_name);
-        } else if (tmp->city_id != currentCityID) {
-            printf("%s - ", citiesInfo[tmp->city_id].city_name);
-            currentCityID = tmp->city_id;
+        printf("%s", citiesInfo[tmp->city_id].city_name);
+
+        if (tmp->next != NULL) {
+            printf("-");
         }
+
         tmp = tmp->next;
     }
 
-    printf("\n\nTotal Cost: %d\n", totalCost);
+    printf("\nTotal cost: %d\n", totalCost);
 }
 
-void deletePartialRoadMap(struct RoadMap **head)
+void deleteAllRoadMap(struct RoadMap **head)
 {
     struct RoadMap *current = *head;
 
@@ -95,66 +138,67 @@ void deletePartialRoadMap(struct RoadMap **head)
     *head = NULL;
 }
 
+void deletePartialRoadMap(struct RoadMap **head)
+{
+    deleteAllRoadMap(head);
+}
+
 void deleteTotalRoadMap(struct RoadMap **totalRoadMap)
 {
-    struct RoadMap *current = *totalRoadMap;
+    deleteAllRoadMap(totalRoadMap);
+}
 
-    while (current != NULL) {
-        struct RoadMap *tmp = current->next;
-        free(current);
-        current = tmp;
+int findLowestCostNeighbor(int source, int last_visited)
+{
+    int idx;
+    int minCost = 0;
+    int nextCity = -1;
+
+    for (idx = 0; idx < NUMBER_CITIES; idx++) {
+        int cost = adjacency_matrix[source][idx];
+
+        if ((cost != 0) && (idx != last_visited) && ((minCost == 0) || (cost < minCost))) {
+            minCost = cost;
+            nextCity = idx;
+        }
     }
 
-    *totalRoadMap = NULL;
+    return nextCity;
 }
 
 int RouteSearch(int source, int destination, struct RoadMap **head, struct RoadMap **totalRoadMap)
 {
-    int last_visited = NUMBER_CITIES; //Mirem d'on venim per no entrar en bucle
+    int cost;
+    int last_visited;
+    int idxNextSource;
 
-    if (*head == NULL) { // Aixo nomes quan no hi ha res a RoadMap (l'inicialitzem)
+    if ((source < 0) || (source >= NUMBER_CITIES) || (destination < 0) || (destination >= NUMBER_CITIES)) {
+        return 0;
+    }
+
+    if (*head == NULL) {
         addToRoadMap(head, totalRoadMap, source, 0);
-        last_visited = -1;
-    };
+    }
 
-    int cost = adjacency_matrix[source][destination];
+    if (source == destination) {
+        return 0;
+    }
 
-    if (cost != 0) { // Aixo es quan hi ha ruta directa de source a destination
+    cost = adjacency_matrix[source][destination];
+
+    if (cost != 0) {
         addToRoadMap(head, totalRoadMap, destination, cost);
         return cost;
     }
 
-    // A partir d'aqui ens trobem en el punt en que hem de fer escala (a la ciutat mes barata)
-    if ((last_visited != -1) && (*head != NULL) && ((*head)->next != NULL)) {
-        struct RoadMap *tmp = *head;
+    last_visited = getPreviousCity(*head);
+    idxNextSource = findLowestCostNeighbor(source, last_visited);
 
-        while (tmp->next->next != NULL) { // AIXO NO FUNCIONA QUAN NOMES HI HA UN ITEM A ROADMAP
-            tmp = tmp->next;
-        }
-
-        last_visited = tmp->city_id;
+    if (idxNextSource == -1) {
+        return 0;
     }
 
-    int min = 0; //
-    int idx = 0;
-
-    while ((idx < NUMBER_CITIES) && (!min)) {
-        if (idx != last_visited) {
-            min = adjacency_matrix[source][idx];
-        }
-        idx++;
-    }
-
-    int idxNextSource = idx - 1;
-
-    for (; idx < NUMBER_CITIES; idx++) {
-        if ((adjacency_matrix[source][idx] < min) && (adjacency_matrix[source][idx] != 0) && (idx != last_visited)) {
-            min = adjacency_matrix[source][idx];
-            idxNextSource = idx;
-        }
-    }
-
-    cost = min;
+    cost = adjacency_matrix[source][idxNextSource];
     addToRoadMap(head, totalRoadMap, idxNextSource, cost);
 
     return RouteSearch(idxNextSource, destination, head, totalRoadMap) + cost;

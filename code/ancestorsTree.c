@@ -3,119 +3,142 @@
 #include <string.h>
 #include "worldJourney.c"
 
-// -------------------------------------------------------------------------------------------------------
-// Primer tota la llogica general per gestionar el Family Tree
-
-
-// Aquesta estructura em feia falta per retornar una parella de integers en una funcio
 struct parents
 {
     int mParentsID;
     int fParentsID;
 };
 
+struct bfsQueue
+{
+    int city_id;
+    struct FamilyTreeNode **correspondingNode;
+    struct bfsQueue *next;
+} *queue = NULL;
+
+int validCityID(int city_id)
+{
+    return (city_id >= 0) && (city_id < NUMBER_CITIES);
+}
+
+int hasCityInfo(int city_id)
+{
+    if (!validCityID(city_id)) {
+        return 0;
+    }
+
+    if ((citiesInfo[city_id].mother_name[0] == '\0') &&
+        (citiesInfo[city_id].father_name[0] == '\0') &&
+        (citiesInfo[city_id].mother_parents_city_id == 0) &&
+        (citiesInfo[city_id].father_parents_city_id == 0)) {
+        return 0;
+    }
+
+    return 1;
+}
+
 struct parents fillNode(int citiesInfoIDX, struct FamilyTreeNode **node)
 {
-    // Aquesta funcio senzillament emplena un node amb els valors corresponents, perque fa pal fer-ho cada cop :)
-    // RETORNA L'INDEX DE MOTHER'S PARENTS I FATHER'S PARENTS
+    struct parents p;
+    int mothers_parents_id = -1;
+    int fathers_parents_id = -1;
+
+    p.mParentsID = -1;
+    p.fParentsID = -1;
+
+    if ((node == NULL) || !validCityID(citiesInfoIDX)) {
+        return p;
+    }
+
     if (*node == NULL) {
         *node = malloc(sizeof(struct FamilyTreeNode));
     }
 
     if (*node == NULL) {
-        printf("Family Tree node Cannot be NULL\n");
+        printf("Family Tree node cannot be NULL\n");
         exit(EXIT_FAILURE);
     }
 
     strcpy((*node)->motherName, citiesInfo[citiesInfoIDX].mother_name);
     strcpy((*node)->fatherName, citiesInfo[citiesInfoIDX].father_name);
     (*node)->city_id = citiesInfoIDX;
-
-    int mothers_parents_id = citiesInfo[citiesInfoIDX].mother_parents_city_id;
-    int fathers_parents_id = citiesInfo[citiesInfoIDX].father_parents_city_id;
-
     (*node)->mother_parents = NULL;
     (*node)->father_parents = NULL;
 
-    if (mothers_parents_id != -1) {
-        (*node)->mother_parents = malloc(sizeof(struct FamilyTreeNode));
+    if (!hasCityInfo(citiesInfoIDX)) {
+        return p;
     }
 
-    if (fathers_parents_id != -1) {
-        (*node)->father_parents = malloc(sizeof(struct FamilyTreeNode));
+    mothers_parents_id = citiesInfo[citiesInfoIDX].mother_parents_city_id;
+    fathers_parents_id = citiesInfo[citiesInfoIDX].father_parents_city_id;
+
+    if (hasCityInfo(mothers_parents_id)) {
+        (*node)->mother_parents = malloc(sizeof(struct FamilyTreeNode));
+
+        if ((*node)->mother_parents == NULL) {
+            printf("Family Tree node cannot be NULL\n");
+            exit(EXIT_FAILURE);
         }
 
-    struct parents p;
-    p.mParentsID = mothers_parents_id;
-    p.fParentsID = fathers_parents_id;
+        p.mParentsID = mothers_parents_id;
+    }
+
+    if (hasCityInfo(fathers_parents_id)) {
+        (*node)->father_parents = malloc(sizeof(struct FamilyTreeNode));
+
+        if ((*node)->father_parents == NULL) {
+            printf("Family Tree node cannot be NULL\n");
+            exit(EXIT_FAILURE);
+        }
+
+        p.fParentsID = fathers_parents_id;
+    }
 
     return p;
 }
 
-
-// -------------------------------------------------------------------------------------------------------
-// A partir d'aqui el DFS
-
-void dfsStep(struct FamilyTreeNode **current, int nextIdx, struct RoadMap **head, struct RoadMap **totalRoadMap)
+void dfsStep(struct FamilyTreeNode **current, int nextIdx)
 {
-    // Aquesta funcio senzillamen es el pas de dfs que es truca de forma recursiva
+    struct parents p;
+
     if ((current == NULL) || (nextIdx == -1)) {
         return;
     }
 
-    struct parents p = fillNode(nextIdx, current);
+    p = fillNode(nextIdx, current);
 
-    if (p.mParentsID != -1) {
-
-        RouteSearch(nextIdx, p.mParentsID, head, totalRoadMap);
-        printPartialRoadMap(*head);
-        deletePartialRoadMap(head);
-        dfsStep(&((*current)->mother_parents), p.mParentsID, head, totalRoadMap);
-
-    }
-
-    if (p.fParentsID != -1) {
-
-        RouteSearch(nextIdx, p.fParentsID, head, totalRoadMap);
-        printPartialRoadMap(*head);
-        deletePartialRoadMap(head);
-        dfsStep(&((*current)->father_parents), p.fParentsID, head, totalRoadMap);
-    }
+    dfsStep(&((*current)->mother_parents), p.mParentsID);
+    dfsStep(&((*current)->father_parents), p.fParentsID);
 }
 
-void dfsSearch(struct FamilyTreeNode *head, struct RoadMap **roadMapHead, struct RoadMap **totalRoadMap)
+void dfsSearch(struct FamilyTreeNode **head)
 {
-    // I aquesta es la ultima de dfs que senzillament inicialitza el familytree si no esta inicialitzat, i truca dfsStep
+    struct parents p;
+
     if (head == NULL) {
         return;
     }
 
-    struct parents p = fillNode(0, &head);
+    p = fillNode(0, head);
 
-    dfsStep(&(head->mother_parents), p.mParentsID, roadMapHead, totalRoadMap);
-    dfsStep(&(head->father_parents), p.fParentsID, roadMapHead, totalRoadMap);
+    dfsStep(&((*head)->mother_parents), p.mParentsID);
+    dfsStep(&((*head)->father_parents), p.fParentsID);
 }
-
-
-// -------------------------------------------------------------------------------------------------------
-// I a partir d'aqui el BFS
-
-
-// Aixo servira de regirstre de les ciutats on hem d'anar per a cada layer del bfs
-struct bfsQueue
-{
-    int city_id;
-    struct FamilyTreeNode **correspondingNode;
-    struct bfsQueue *next;
-}*queue = NULL;
 
 void addToBfsQueue(int city_id, struct FamilyTreeNode **correspondingNode)
 {
-    if (city_id == -1) {
+    struct bfsQueue *newElement;
+
+    if ((city_id == -1) || (correspondingNode == NULL)) {
         return;
     }
 
-    struct bfsQueue *newElement = malloc(sizeof(struct bfsQueue));
+    newElement = malloc(sizeof(struct bfsQueue));
+
+    if (newElement == NULL) {
+        printf("BFS queue node cannot be NULL\n");
+        exit(EXIT_FAILURE);
+    }
 
     newElement->city_id = city_id;
     newElement->correspondingNode = correspondingNode;
@@ -125,43 +148,56 @@ void addToBfsQueue(int city_id, struct FamilyTreeNode **correspondingNode)
         queue = newElement;
     } else {
         struct bfsQueue *tmp = queue;
+
         while (tmp->next != NULL) {
             tmp = tmp->next;
         }
+
         tmp->next = newElement;
     }
 }
 
-void removeQueueElement()
+void removeQueueElement(void)
 {
+    struct bfsQueue *tmp;
+
     if (queue == NULL) {
         return;
     }
 
-    struct bfsQueue *tmp = queue->next;
+    tmp = queue->next;
     free(queue);
     queue = tmp;
 }
 
+void clearBfsQueue(void)
+{
+    while (queue != NULL) {
+        removeQueueElement();
+    }
+}
+
 void bfsSearch(struct FamilyTreeNode **head)
 {
+    struct parents p;
+
     if (head == NULL) {
         return;
     }
 
-    while (queue != NULL) {
-        removeQueueElement();
-    }
+    clearBfsQueue();
 
-    struct parents p = fillNode(0, head);
+    p = fillNode(0, head);
 
     addToBfsQueue(p.mParentsID, &((*head)->mother_parents));
     addToBfsQueue(p.fParentsID, &((*head)->father_parents));
 
     while (queue != NULL) {
-        p = fillNode(queue->city_id, queue->correspondingNode);
+        struct FamilyTreeNode *currentNode;
 
-        struct FamilyTreeNode *currentNode = *(queue->correspondingNode);
+        p = fillNode(queue->city_id, queue->correspondingNode);
+        currentNode = *(queue->correspondingNode);
+
         addToBfsQueue(p.mParentsID, &(currentNode->mother_parents));
         addToBfsQueue(p.fParentsID, &(currentNode->father_parents));
 
@@ -169,18 +205,159 @@ void bfsSearch(struct FamilyTreeNode **head)
     }
 }
 
+void printNode(struct FamilyTreeNode *node, int level)
+{
+    int idx;
 
-void printTree(struct FamilyTreeNode *node)
+    for (idx = 0; idx < level; idx++) {
+        printf("->");
+    }
+
+    if (level > 0) {
+        printf(" ");
+    }
+
+    printf("%s and %s (%s)\n",
+           node->motherName,
+           node->fatherName,
+           citiesInfo[node->city_id].city_name);
+}
+
+void printTreeDFS(struct FamilyTreeNode *node, int level)
 {
     if (node == NULL) {
         return;
     }
 
-    printf("%s / %s - %s\n",
-           node->motherName,
-           node->fatherName,
-           citiesInfo[node->city_id].city_name);
+    printNode(node, level);
+    printTreeDFS(node->mother_parents, level + 1);
+    printTreeDFS(node->father_parents, level + 1);
+}
 
-    printTree(node->mother_parents);
-    printTree(node->father_parents);
+int treeHeight(struct FamilyTreeNode *node)
+{
+    int motherHeight;
+    int fatherHeight;
+
+    if (node == NULL) {
+        return 0;
+    }
+
+    motherHeight = treeHeight(node->mother_parents);
+    fatherHeight = treeHeight(node->father_parents);
+
+    if (motherHeight > fatherHeight) {
+        return motherHeight + 1;
+    }
+
+    return fatherHeight + 1;
+}
+
+void printTreeLevel(struct FamilyTreeNode *node, int currentLevel, int targetLevel)
+{
+    if (node == NULL) {
+        return;
+    }
+
+    if (currentLevel == targetLevel) {
+        printNode(node, currentLevel);
+    } else {
+        printTreeLevel(node->mother_parents, currentLevel + 1, targetLevel);
+        printTreeLevel(node->father_parents, currentLevel + 1, targetLevel);
+    }
+}
+
+void printTreeBFS(struct FamilyTreeNode *node)
+{
+    int level;
+    int height = treeHeight(node);
+
+    for (level = 0; level < height; level++) {
+        printTreeLevel(node, 0, level);
+    }
+}
+
+void printTree(struct FamilyTreeNode *node)
+{
+    printTreeDFS(node, 0);
+}
+
+void travelToCity(int destination,
+                  int *currentCity,
+                  struct RoadMap **head,
+                  struct RoadMap **totalRoadMap,
+                  int *totalCost)
+{
+    int cost;
+
+    if ((currentCity == NULL) || (destination == -1)) {
+        return;
+    }
+
+    cost = RouteSearch(*currentCity, destination, head, totalRoadMap);
+    *totalCost = *totalCost + cost;
+    printRoadMap(*head);
+    deletePartialRoadMap(head);
+    *currentCity = destination;
+}
+
+void createRoadMapDFS(struct FamilyTreeNode *node,
+                      int *currentCity,
+                      struct RoadMap **head,
+                      struct RoadMap **totalRoadMap,
+                      int *totalCost)
+{
+    if (node == NULL) {
+        return;
+    }
+
+    travelToCity(node->city_id, currentCity, head, totalRoadMap, totalCost);
+    createRoadMapDFS(node->mother_parents, currentCity, head, totalRoadMap, totalCost);
+    createRoadMapDFS(node->father_parents, currentCity, head, totalRoadMap, totalCost);
+}
+
+void createRoadMapLevel(struct FamilyTreeNode *node,
+                        int currentLevel,
+                        int targetLevel,
+                        int *currentCity,
+                        struct RoadMap **head,
+                        struct RoadMap **totalRoadMap,
+                        int *totalCost)
+{
+    if (node == NULL) {
+        return;
+    }
+
+    if (currentLevel == targetLevel) {
+        travelToCity(node->city_id, currentCity, head, totalRoadMap, totalCost);
+    } else {
+        createRoadMapLevel(node->mother_parents, currentLevel + 1, targetLevel, currentCity, head, totalRoadMap, totalCost);
+        createRoadMapLevel(node->father_parents, currentLevel + 1, targetLevel, currentCity, head, totalRoadMap, totalCost);
+    }
+}
+
+void createRoadMapBFS(struct FamilyTreeNode *node,
+                      int *currentCity,
+                      struct RoadMap **head,
+                      struct RoadMap **totalRoadMap,
+                      int *totalCost)
+{
+    int level;
+    int height = treeHeight(node);
+
+    for (level = 1; level < height; level++) {
+        createRoadMapLevel(node, 0, level, currentCity, head, totalRoadMap, totalCost);
+    }
+}
+
+void deleteTree(struct FamilyTreeNode **node)
+{
+    if ((node == NULL) || (*node == NULL)) {
+        return;
+    }
+
+    deleteTree(&((*node)->mother_parents));
+    deleteTree(&((*node)->father_parents));
+    free(*node);
+    *node = NULL;
 }

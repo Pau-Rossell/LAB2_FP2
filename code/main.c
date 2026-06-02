@@ -1,63 +1,56 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-struct RoadMap *head = NULL;
-struct RoadMap *totalRoadMap = NULL;
-struct FamilyTreeNode *familyTreeDFS = NULL; // Family Tree que plenarem amb DFS
-struct FamilyTreeNode *familyTreeBFS = NULL; // Family Tree que plenarem amb BFS
-
 #include "ancestorsTree.c"
-int main()
+
+int main(void)
 {
-    int totalCost;
+    struct RoadMap *head = NULL;
+    struct RoadMap *totalRoadMap = NULL;
+    struct FamilyTreeNode *familyTreeDFS = NULL;
+    struct FamilyTreeNode *familyTreeBFS = NULL;
+    int totalCost = 0;
+    int currentCity = 0;
 
-    //DFS 
+#if defined(LARGE_CASE)
+    printf("This is a large case of the program\n");
+#elif defined(MEDIUM_CASE)
+    printf("This is a medium case of the program\n");
+#else
+    printf("This is a small case of the program\n");
+#endif
 
-    familyTreeDFS = malloc(sizeof(struct FamilyTreeNode));
-    familyTreeBFS = malloc(sizeof(struct FamilyTreeNode));
+    printf("Ancestors' tree:\n");
 
-    head = NULL;
-    totalRoadMap = NULL;
-    
-    printf("\nPartial road map:\n");
+    bfsSearch(&familyTreeBFS);
 
-    dfsSearch(familyTreeDFS, &head, &totalRoadMap);
-    
-    printf("Ancestors' tree:\n\n");
+    printf("BFS -> Names:\n");
+    printTreeBFS(familyTreeBFS);
+
+    printf("Partial road map:\n");
+    createRoadMapBFS(familyTreeBFS, &currentCity, &head, &totalRoadMap, &totalCost);
+    printTotalRoadMap(totalRoadMap, totalCost);
+
+    deletePartialRoadMap(&head);
+    deleteTotalRoadMap(&totalRoadMap);
+
+    printf("---------------------------------\n");
+
+    totalCost = 0;
+    currentCity = 0;
+
+    dfsSearch(&familyTreeDFS);
+
     printf("DFS -> Names:\n");
-    printTree(familyTreeDFS);
+    printTreeDFS(familyTreeDFS, 0);
 
+    printf("Partial road map:\n");
+    createRoadMapDFS(familyTreeDFS->mother_parents, &currentCity, &head, &totalRoadMap, &totalCost);
+    createRoadMapDFS(familyTreeDFS->father_parents, &currentCity, &head, &totalRoadMap, &totalCost);
+    printTotalRoadMap(totalRoadMap, totalCost);
 
-    printf("\nTotal Road Map:\n");
-    printTotalRoadMap(totalRoadMap, 0);
+    deletePartialRoadMap(&head);
+    deleteTotalRoadMap(&totalRoadMap);
+    deleteTree(&familyTreeDFS);
+    deleteTree(&familyTreeBFS);
 
-    printf("\n----------------------------------\n\n");
-    
-    
-    //BFS
-
-    //head = NULL;
-    //totalRoadMap = NULL;
-
-    //printf("BFS -> Names:\n");
-
-    //bfsSearch(familyTreeBFS);
-
-    //printTree(familyTreeBFS);
-
-    //printf("\nPartial road map:\n");
-    //printPartialRoadMap();
-
-    //printf("\nTotal Road Map:\n");
-   // printTotalRoadMap(0);
-
-
-    //CLEAN MEMORY
-
-    //deleteAllRoadMap();
-    // deleteTotalRoadMap();
-
-    // deleteTree(familyTreeDFS);
-    // deleteTree(familyTreeBFS);
     return 0;
 }
