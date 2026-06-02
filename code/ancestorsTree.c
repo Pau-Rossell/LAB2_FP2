@@ -63,12 +63,20 @@ void dfsSearch(struct FamilyTreeNode *head)
 }
 
 
+void bfsStep(struct FamilyTreeNode *mother, struct FamilyTreeNode *father, int motherParentsID, int fatherParentsID){
+    
+}
+
 void bfsSearch(struct FamilyTreeNode *head){
     if (head == NULL) {
         return
     }
 
-    struct parents p = fllNode(0, head)
+    struct parents p = fllNode(0, head);
+
+    bfsStep(head->mother_parents, head->father_parents, p.mParentsID, p.fParentsID);
+
+
 }
 
 void printTree(struct FamilyTreeNode *node)
