@@ -23,3 +23,15 @@
 *.bcf
 *.run.xml
 *.xdv
+
+# C build artifacts
+*.o
+*.out
+*.dSYM/
+code/anc
+code/ancestorsTree
+code/project
+project
+
+# Una cosa que no entenc ni que es
+.vscode/

@@ -1,10 +1,7 @@
-#include "small.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-struct RoadMap *head = NULL;
 
-struct RoadMap *totalRoadMap = NULL;
 
 struct RoadMap *getLastElement(struct RoadMap *head)
 {
@@ -50,7 +47,7 @@ void addToRoadMap(int city_id, int hop_cost)
     }
 }
 
-void printRoadMap()
+void printPartialRoadMap()
 {
     struct RoadMap *current = head;
 
@@ -99,13 +96,23 @@ void deleteAllRoadMap()
     head = NULL;
 }
 
+void deleteTotalRoadMap()
+{
+    struct RoadMap *current = totalRoadMap;
+    while (current != NULL) {
+        struct RoadMap *tmp = current->next;
+        free(current);
+        current = tmp;
+    }
+    totalRoadMap = NULL;
+}
+
 int RouteSearch(int source, int destination, struct RoadMap *RoadMap)
 {
-    int last_visited = NUMBER_CITIES; //Mirem d'on venim per no entrar en bucle
+    int last_visited = -1; //Mirem d'on venim per no entrar en bucle
 
     if (RoadMap == NULL) { // Aixo nomes quan no hi ha res a RoadMap (l'inicialitzem)
         addToRoadMap(source, 0);
-        last_visited = -1;
     };
 
     int cost = adjacency_matrix[source][destination];
@@ -150,28 +157,3 @@ int RouteSearch(int source, int destination, struct RoadMap *RoadMap)
 
     return RouteSearch(idxNextSource, destination, head) + cost;
 };
-
-//dfsSearch
-
-
-int main()
-{
-    int cost = 0;
-
-    cost = cost + RouteSearch(0, 5, head);
-    printf("\nPartial Road Map: \n");
-    printRoadMap();
-    deleteAllRoadMap();
-
-    cost = cost + RouteSearch(5, 6, head);
-    printRoadMap();
-    deleteAllRoadMap();
-
-    cost = cost + RouteSearch(6, 1, head);
-    printRoadMap();
-    deleteAllRoadMap();
-
-    printTotalRoadMap(cost);
-
-    return 0;
-}

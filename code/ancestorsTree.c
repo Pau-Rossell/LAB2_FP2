@@ -1,18 +1,11 @@
-#include "./small.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "worldJourney.c"
 
-struct FamilyTreeNode *familyTreeDFS = NULL; // Family Tree que plenarem amb DFS
-struct FamilyTreeNode *familyTreeBFS = NULL; // Family Tree que plenarem amb BFS
 
 // Aquesta estructura em feia falta per retornar una parella de integers en una funcio
-struct parents
-{
-    int mParentsID;
-    int fParentsID;
-};
+
 
 struct parents fillNode(int citiesInfoIDX, struct FamilyTreeNode *node)
 {
@@ -53,7 +46,7 @@ void dfsSearch(struct FamilyTreeNode *head)
 {
     // I aquesta es la ultima de dfs que senzillament inicialitza el familytree si no esta inicialitzat, i truca dfsStep
     if (head == NULL) {
-        return
+        return;
     }
 
     struct parents p = fillNode(0, head);
@@ -69,7 +62,7 @@ void bfsStep(struct FamilyTreeNode *mother, struct FamilyTreeNode *father, int m
 
 void bfsSearch(struct FamilyTreeNode *head){
     if (head == NULL) {
-        return
+        return;
     }
 
     struct parents p = fllNode(0, head);
@@ -94,16 +87,3 @@ void printTree(struct FamilyTreeNode *node)
     printTree(node->father_parents);
 }
 
-int main(void)
-{
-    familyTreeDFS = malloc(sizeof(struct FamilyTreeNode));
-    dfsSearch(familyTreeDFS);
-    printf("DFS family tree:\n");
-    printTree(familyTreeDFS);
-
-    familyTreeBFS = malloc(sizeof(struct FamilyTreeNode));
-    printf("\nBFS family tree:\n");
-    printTree(familyTreeBFS);
-
-    return 0;
-}
