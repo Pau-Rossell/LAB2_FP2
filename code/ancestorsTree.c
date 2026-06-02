@@ -44,7 +44,6 @@ struct parents fillNode(int citiesInfoIDX, struct FamilyTreeNode **node)
     if (fathers_parents_id != -1) {
         (*node)->father_parents = malloc(sizeof(struct FamilyTreeNode));
         }
-    }
 
     struct parents p;
     p.mParentsID = mothers_parents_id;
